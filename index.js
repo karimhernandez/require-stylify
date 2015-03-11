@@ -103,6 +103,9 @@ module.exports = function (file, opts) {
                         var parser = new(less.Parser)(lessOpts);
                         var lessSourceText = fs.readFileSync(absPath, 'utf8');
 
+                        var url = path.relative(opts.rootDir || absoluteDir, absPath);
+                        console.log("require-stylify: " + url);
+
                         parser.parse(lessSourceText, function (e, tree) {
                             if (e) {
                                 console.error(e);
@@ -112,7 +115,7 @@ module.exports = function (file, opts) {
                             fs.writeFileSync(absPath.replace('.less','.css'), css);
 
                         });
-                        var url = path.relative(opts.rootDir || absoluteDir, absPath);
+
                         if (url.indexOf('..') === 0 ) {
                             if (opts.rootDir) {
                                 throw new Error('cannot build url to a style ' + url + ' because specified root is lower in the filesystem tree');
