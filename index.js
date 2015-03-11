@@ -9,6 +9,21 @@ var fs = require('fs');
 var prependerAdded = false;
 var _ = require('lodash');
 
+/* Sample options config
+
+ {
+   "rootDir": "/home/www",
+   "stylifyOptions": {
+     "support": ["css", "less"]
+   },
+   "less" : {
+     "env": "development",
+     "dumpLineNumbers": "all"
+   }
+ }
+
+ */
+
 function matchArgs(fnCallString) {
 	var args = fnCallString.match(/("|')([^("|')]+)("|')\s*/g);
 	args.forEach(function (arg, i){
@@ -80,10 +95,12 @@ module.exports = function (file, opts) {
 
 						//TODO we could make a crc which will indicate the last compiled file and compile only when crc changes
 
-						var parser = new(less.Parser)({
-							paths: ['.', path.dirname(absPath)], // Specify search paths for @import directives
-							filename: path.basename(file) // Specify a filename, for better error messages
-						});
+                        var lessOpts = _.extend({
+                            paths: ['.', path.dirname(absPath)],
+                            filename: path.basename(file)
+                        }, opts.less);
+
+						var parser = new(less.Parser)(lessOpts);
 						var lessSourceText = fs.readFileSync(absPath, 'utf8');
 
 						parser.parse(lessSourceText, function (e, tree) {
@@ -134,13 +151,11 @@ module.exports = function (file, opts) {
 						//TODO we could make a crc which will indicate the last compiled file and compile only when crc changes
 						var sassSourceText = fs.readFileSync(absPath, 'utf8');
 
-						var sassOpts = {
-							data: sassSourceText,
-							outputStyle: 'compressed'
-						};
-						_.extend(sassOpts, opts.scss);
+						var sassOpts = _.extend({
+                            outputStyle: 'compressed'
+                        }, opts.scss);
 
-						var sassOutput = sass.renderSync(sassOpts);
+						var sassOutput = sass.renderSync(_.extend(sassOpts, {data: sassSourceText}));
 						fs.writeFileSync(absPath.replace('.scss','.css'), sassOutput);
 
 						var url = path.relative(opts.rootDir || absoluteDir, absPath);
